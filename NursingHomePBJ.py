@@ -1,15 +1,21 @@
 import pandas as pd
 import glob
-
-NursingHomeData2020 = glob.glob('C:/Users/bobom/Desktop/Coursera/Nursing_Home_Data/NHomeData2020/*.csv')
+import traceback2 as tb
+NursingHomeData2020 = glob.glob(r'\\irvdcna01\home$\PThompson\Documents\Covid Project\NHomeData2021\*.csv')
 
 nursing_df = pd.DataFrame()
 
-for files in NursingHomeData2020: #This is returning an empty df.....
-        df = pd.read_csv(files, error_bad_lines=False, encoding='unicode_escape') #Not sure what to do here... https://www.roelpeters.be/solved-dtypewarning-columns-have-mixed-types-specify-dtype-option-on-import-or-set-low-memory-in-pandas/
-        nursing_df = pd.concat([nursing_df, df], ignore_index=True)
+for files in NursingHomeData2020:
+        try:
+                Nursing_Home_Data_Filtered = pd.read_csv(files, usecols=['Federal Provider Number', 'Week Ending', 'Provider Name', 'Provider State', 'Number of All Healthcare Personnel Eligible to Work in this Facility for At Least 1 Day This Week who Received a Completed COVID-19 Vaccination at Any Time'], on_bad_lines='warn', encoding='unicode_escape')
+                nursing_df = pd.concat([nursing_df, Nursing_Home_Data_Filtered], ignore_index=True)
+        except Exception:
+                tb.print_exc()
+                continue
+
 
 print('Concatenation Done')
+
 
 ### 2/21/2022 ###
 # read in provider numbers using ~ pd.read_csv ~ and saved to "Provider_Num"
@@ -20,3 +26,13 @@ print('Concatenation Done')
 ######
 
 
+OurProviderNumbers = pd.read_excel(r'\\irvdcna01\home$\PThompson\Documents\Covid Project\OurProviderNumbers.xlsx')
+OurProviderNumbers = OurProviderNumbers.values.tolist()
+
+Nursing_Home_Data_Filtered.rename(columns={'Federal Provider Numbers':'Provider_Number'}, inplace=True)
+
+Provider_Number_Bool = Nursing_Home_Data_Filtered.Provider_Number.apply(lambda x: x == OurProviderNumbers)
+
+for boolean_false in Provider_Number_Bool:
+
+##Create a new column with the boolean value and delete the rows based off of that
