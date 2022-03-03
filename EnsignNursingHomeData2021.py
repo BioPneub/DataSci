@@ -44,33 +44,52 @@ EnsignsProviderNumbers = pd.read_csv(r'C:\Users\bobom\Desktop\Coursera\Nursing_H
     # Used <nursing_df['Federal Provider Number'].isin(EnsignsProviderNumbers).value_counts> to verify that all results came back as false from the previous query.
 
     # <nursing_df.dtypes> and <EnsignProviderNumbers.dtypes> have the columns set as objects...
-#
+
 
 EnsignsProviderNumbers = EnsignsProviderNumbers.to_numpy().tolist()
     # Figured it would be better to convert to a list and check again based on the descriptions given here https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.isin.html
 
+
 EnsignsProviderNumbers = [val for sublist in EnsignsProviderNumbers for val in sublist]
     #Used this to get rid of the brackets in the list. The brackets were being read as part of the element.
-#
+
+
 EnsignIsIn = nursing_df['Federal Provider Number'].isin(EnsignsProviderNumbers)
 EnsignIsIn.value_counts()
     # Result:
     # False    30470931
     # True       430262
     #Looking back at it now, I didn't originally assign <nursing_df['Federal Provider Number'].isin(EnsignsProviderNumbers).value_counts> to a variable....Maybe I didn't need to convert  EnsignsProviderNumbers to a numpy array then to a list?
-#
+
+
 EnsignNursingHomeData = nursing_df.assign(Affiliate=EnsignIsIn)
     # Adding in this column to later drop all rows that have a value of False in this column
-#
+
+
 RowsDropped = EnsignNursingHomeData[EnsignNursingHomeData['Affiliate'] == False].index
 EnsignNursingHomeData.drop(RowsDropped, inplace=True)
     # Dropped like flies....
-#
+
+
 EnsignNursingHomeData.reset_index(drop=True, inplace=True)
     # Just to reorganize and make everything look nice and neat.
-#
+
+
 EnsignNursingHomeData.to_pickle(r'C:\Users\bobom\Desktop\EnsignNursingHomeData2021.pkl')
     # Pickling now that the data is nice and organized. Saved on github
+
+#Next, need to group by state and begin calculating the averages for vaccinated healthcare personnel.
+#Refer to this:
+# Percentage of Current Healthcare Personnel who
+# Received a Completed COVID-19 Vaccination at Any
+# Time
+
+# Calculated as follows: (Number of All Healthcare
+# Personnel Eligible to Work in this Facility for At Least
+# 1 Day This Week who Received a Completed COVID19 Vaccination at Any Time / Number of All
+# Healthcare Personnel Eligible to Work in this Facility
+# for At Least 1 Day This Week) * 100
+
 # NursingHomeData = pd.read_pickle(r'C:\Users\bobom\Documents\nursing_df.pkl')
 
 
