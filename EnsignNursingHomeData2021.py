@@ -44,41 +44,34 @@ EnsignsProviderNumbers = pd.read_csv(r'C:\Users\bobom\Desktop\Coursera\Nursing_H
     # Used <nursing_df['Federal Provider Number'].isin(EnsignsProviderNumbers).value_counts> to verify that all results came back as false from the previous query.
 
     # <nursing_df.dtypes> and <EnsignProviderNumbers.dtypes> have the columns set as objects...
-
+#
 
 EnsignsProviderNumbers = EnsignsProviderNumbers.to_numpy().tolist()
     # Figured it would be better to convert to a list and check again based on the descriptions given here https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.isin.html
 
-
 EnsignsProviderNumbers = [val for sublist in EnsignsProviderNumbers for val in sublist]
     #Used this to get rid of the brackets in the list. The brackets were being read as part of the element.
-
-
+#
 EnsignIsIn = nursing_df['Federal Provider Number'].isin(EnsignsProviderNumbers)
 EnsignIsIn.value_counts()
     # Result:
     # False    30470931
     # True       430262
     #Looking back at it now, I didn't originally assign <nursing_df['Federal Provider Number'].isin(EnsignsProviderNumbers).value_counts> to a variable....Maybe I didn't need to convert  EnsignsProviderNumbers to a numpy array then to a list?
-
-
+#
 EnsignNursingHomeData = nursing_df.assign(Affiliate=EnsignIsIn)
     # Adding in this column to later drop all rows that have a value of False in this column
-
-
+#
 RowsDropped = EnsignNursingHomeData[EnsignNursingHomeData['Affiliate'] == False].index
 EnsignNursingHomeData.drop(RowsDropped, inplace=True)
     # Dropped like flies....
-
-
+#
 EnsignNursingHomeData.reset_index(drop=True, inplace=True)
     # Just to reorganize and make everything look nice and neat.
-
-
+#
 EnsignNursingHomeData.to_pickle(r'C:\Users\bobom\Desktop\EnsignNursingHomeData2021.pkl')
     # Pickling now that the data is nice and organized. Saved on github
 
-#Next, need to group by state and begin calculating the averages for vaccinated healthcare personnel.
 #Refer to this:
 # Percentage of Current Healthcare Personnel who
 # Received a Completed COVID-19 Vaccination at Any
@@ -86,11 +79,43 @@ EnsignNursingHomeData.to_pickle(r'C:\Users\bobom\Desktop\EnsignNursingHomeData20
 
 # Calculated as follows: (Number of All Healthcare
 # Personnel Eligible to Work in this Facility for At Least
-# 1 Day This Week who Received a Completed COVID19 Vaccination at Any Time / Number of All
+# 1 Day This Week who Received a Completed COVID:19 Vaccination at Any Time / Number of All
 # Healthcare Personnel Eligible to Work in this Facility
 # for At Least 1 Day This Week) * 100
 
-# NursingHomeData = pd.read_pickle(r'C:\Users\bobom\Documents\nursing_df.pkl')
+EnsignNursingHomeData = pd.read_pickle(r'C:\Users\bobom\Desktop\EnsignNursingHomeData2021.pkl')
+    # Read in pickled data.
+
+EnsignNursingHomeData.dropna(subset=['Total Personnel'], inplace=True)
+    # Dropping rows with NAN values in the 'Total Personnel' column. Can't calculate average if I don't have the total personnel
+
+EnsignNursingHomeData.reset_index(drop=True, inplace=True)
+    # Resetting the indexes again to make things nice and neat
+
+PercentVaccinated = EnsignNursingHomeData['Vaccinated Personnel'].astype(int)/EnsignNursingHomeData['Total Personnel'].astype(int) * 100
+    # Start calculating the percentages. Casted as type int to avoid division by zero error when dividing floats.
+
+PercentVaccinated = PercentVaccinated.round().to_list()
+    #Converted to a list and rounded so we can add that as a column to the df.
+
+EnsignNursingHomeData.insert(7,'Percent_Vaccinated', PercentVaccinated, True)
+    #Added the column.
+
+EnsignNursingHomeData.to_pickle(r'C:\Users\bobom\Desktop\EnsignNursingHomeData2021Percent.pkl')
+    # Exporting to pkl with the percent of vaccinated personnel.
+    EnsignNursingHomeData = pd.read_pickle(r'C:\Users\bobom\Desktop\EnsignNursingHomeData2021Percent.pkl')
+
+EnsignNursingHomeDataGrp = EnsignNursingHomeData.groupby(['Provider State', 'Week Ending']).agg({'Percent_Vaccinated':['mean']})
+    #Grouped by State and Week Ending then calculated the average of the percent vaccinated column
+
+EnsignNursingHomeDataGrp = EnsignNursingHomeDataGrp.assign(Requirements_Met=EnsignNursingHomeDataGrp['Percent_Vaccinated'] > 80.0)
+    # Used > 80.0 against the Percent_Vaccinated column to return True values for States that had a Week Ending average of 81% or higher of vaccinated personnell
+
+EnsignNursingHomeDataGrpDrop = EnsignNursingHomeDataGrp[EnsignNursingHomeDataGrp['Requirements_Met'] == False].index
+EnsignNursingHomeDataGrp.drop(EnsignNursingHomeDataGrpDrop, inplace=True)
+EnsignNursingHomeDataGrp['mean']
+    # Dropped all False values.
+    #Looking now, I should have added the bool values as another row and keeping the percentages. Went back and added the bool values as a column instead.
 
 
 
@@ -121,6 +146,7 @@ EnsignNursingHomeData.to_pickle(r'C:\Users\bobom\Desktop\EnsignNursingHomeData20
 
 
 #-------------------------------------------------------------------------------------------------------------------
+# NursingHomeData = pd.read_pickle(r'C:\Users\bobom\Documents\nursing_df.pkl')
 # NursingHomeData = pd.read_pickle(r'C:\Users\bobom\Documents\nursing_df.pkl') #Now that I've created a pkl file for the data I need.....
 # OurProviderNumbers = pd.read_csv(r'C:\Users\bobom\Desktop\Coursera\Nursing_Home_Data\OurProviderNumbers.csv')
 #
